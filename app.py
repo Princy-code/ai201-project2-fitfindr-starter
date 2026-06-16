@@ -11,6 +11,7 @@ Run with:
 Then open the localhost URL shown in your terminal (usually http://localhost:7860,
 but check your terminal — the port may differ).
 """
+from __future__ import annotations
 
 import gradio as gr
 
@@ -22,30 +23,39 @@ from utils.data_loader import get_example_wardrobe, get_empty_wardrobe
 
 def handle_query(user_query: str, wardrobe_choice: str) -> tuple[str, str, str]:
     """
-    Called by Gradio when the user submits a query.
-
-    Args:
-        user_query:     The text the user typed into the search box.
-        wardrobe_choice: Either "Example wardrobe" or "Empty wardrobe (new user)".
+    Called by Gradio when the user submits a query. Calls run_agent() and maps
+    the session dict to the three output panels.
 
     Returns:
-        A tuple of three strings:
-            (listing_text, outfit_suggestion, fit_card)
-        Each string maps to one of the three output panels in the UI.
-
-    TODO:
-        1. Guard against an empty query (return early with an error message).
-        2. Select the wardrobe based on wardrobe_choice.
-        3. Call run_agent() with the query and selected wardrobe.
-        4. If session["error"] is set, return the error in the first panel
-           and empty strings for the other two.
-        5. Otherwise, format session["selected_item"] into a readable listing_text
-           string and return it along with session["outfit_suggestion"] and
-           session["fit_card"].
+        (listing_text, outfit_suggestion, fit_card)
     """
-    # TODO: implement this function
-    return "Agent not yet implemented.", "", ""
+    # 1. Guard against an empty query.
+    if not user_query or not user_query.strip():
+        return "Please enter what you're looking for.", "", ""
 
+    # 2. Select the wardrobe based on the radio choice.
+    if wardrobe_choice == "Empty wardrobe (new user)":
+        wardrobe = get_empty_wardrobe()
+    else:
+        wardrobe = get_example_wardrobe()
+
+    # 3. Run the agent.
+    session = run_agent(query=user_query, wardrobe=wardrobe)
+
+    # 4. Error path: show the agent's message in the first panel, clear the rest.
+    if session["error"]:
+        return f"\u26a0\ufe0f {session['error']}", "", ""
+
+    # 5. Happy path: format the selected listing and return all three outputs.
+    item = session["selected_item"]
+    listing_text = (
+        f"{item['title']}\n"
+        f"${item['price']:g} \u00b7 {item['platform']} \u00b7 {item['condition']} condition\n"
+        f"Size: {item['size']}\n"
+        f"Brand: {item.get('brand') or 'unbranded'}\n\n"
+        f"{item['description']}"
+    )
+    return listing_text, session["outfit_suggestion"], session["fit_card"]
 
 # ── interface ─────────────────────────────────────────────────────────────────
 
