@@ -93,17 +93,20 @@ Concrete example from testing: running `search_listings('designer ballgown', siz
 <!-- TODO (your words, 2-3 sentences each): -->
 
 **One way planning.md helped during implementation:**
-<!-- e.g. having the Error Handling table written first meant the no-results branch and the empty-outfit guard were decided before I wrote run_agent, so I didn't have to retrofit them. -->
+
+Writing the Error Handling table before any code meant I'd already decided each tool's failure behavior — the no-results branch, the empty-wardrobe path, and the empty-outfit guard — so when I implemented run_agent I wasn't retrofitting error handling, I was just following my own spec.
 
 **One divergence from your spec, and why:**
-<!-- e.g. I added a weighted relevance score (title/style_tags worth more than description) rather than plain keyword count, because plain count ranked off-topic items too high. -->
+
+My spec didn't account for environment issues. The starter pinned an unreleased gradio version and my system Python (3.9) couldn't parse the modern type-hint syntax, so I had to correct the requirements file, add from __future__ import annotations, and pin huggingface_hub to a compatible version. None of that was in the plan, but it was necessary to get the agent running.
 
 ## AI Usage
 
 <!-- TODO (your words): describe at least 2 specific instances — which planning.md section/diagram you gave the AI, what it produced, and what you changed or overrode before using it. -->
 
-1.
-2.
+1. I gave the AI my Tool 1–3 spec blocks from planning.md (inputs, return values, failure modes) and had it implement the three functions in tools.py. I reviewed each one against my spec before trusting it — checking that signatures matched, that search_listings returned [] instead of raising on no match, and that the LLM tools were wrapped so a network failure wouldn't crash the agent. I then ran them against test inputs and the pytest suite to confirm.
+
+2. When my install and test runs failed, I used the AI to interpret the errors and decide on fixes: correcting the gradio version pin, adding from __future__ import annotations for my Python 3.9, adding a conftest.py so pytest could find my modules, and pinning huggingface_hub to resolve the gradio import crash. I ran each command myself and verified the result (e.g. confirming the key loaded and all 11 tests passed) before moving on.
 
 ## Project Structure
 
